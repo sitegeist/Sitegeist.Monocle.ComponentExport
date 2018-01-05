@@ -1,0 +1,19 @@
+{
+    "description": "",
+    "type": "neos-plugin",
+    "name": "sitegeist/monocle-componentexport",
+    "require": {
+        "neos/fusion": "*",
+        "sitegeist/monocle": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sitegeist\\Monocle\\ComponentExport\\": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "Sitegeist.Monocle.ComponentExport"
+        }
+    }
+}
