@@ -46,42 +46,15 @@ class ComponentExportCommandController extends CommandController
      * Get all styleguide items that are currently available
      *
      * @param string $format Result encoding ``fluid`` and ``smarty`` and ``react`` are supported
-     * @param string $exportIdentifier Identifier to export a subset of prototypes
+     * @param string $filename The file to export the ast to
      * @param string $packageKey site-package (defaults to first found)
      */
-    public function allCommand($format = 'fluid', $exportIdentifier = null, $packageKey = null)
+    public function forFormatCommand($format = 'fluid', $filename, $packageKey = null)
     {
         $sitePackageKey = $packageKey ?: $this->getDefaultSitePackageKey();
-
-        $componentPrototypes = $this->getFusionExportPrototypes($sitePackageKey, $exportIdentifier);
-
+        $fusionAst = $this->fusionService->getMergedFusionObjectTreeForSitePackage($sitePackageKey);
         $componentExportService = $this->componentExportServiceResolver->resolveExportService($format);
-        $componentExportService->export('Data/Temporary/Export','Foo.Bar', $componentPrototypes);
-
-    }
-
-    /**
-     * @param $sitePackageKey
-     * @param null $exportIdentifier
-     * @return array
-     */
-    protected function getFusionExportPrototypes($sitePackageKey, $exportIdentifier = null)
-    {
-        $enableExportConfigurationPath = '__meta.styleguide.options.export' . ($exportIdentifier ? '.' . $exportIdentifier : '');
-
-        $fusionAst = $this->fusionService->getMergedTypoScriptObjectTreeForSitePackage($sitePackageKey);
-
-        $exportPrototypes = [];
-        if ($fusionAst && $fusionAst['__prototypes']) {
-            foreach ($fusionAst['__prototypes'] as $prototypeFullName => $prototypeObject) {
-                $enableExportConfiguration = Arrays::getValueByPath($prototypeObject, $enableExportConfigurationPath);
-                if ($enableExportConfiguration) {
-                    $exportPrototypes[$prototypeFullName] = $prototypeObject;
-                }
-            }
-        }
-
-        return $exportPrototypes;
+        $componentExportService->export($fusionAst, $filename);
     }
 
 }

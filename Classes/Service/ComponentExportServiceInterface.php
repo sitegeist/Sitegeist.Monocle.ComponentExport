@@ -10,12 +10,11 @@ interface ComponentExportServiceInterface
     /**
      * @return string the short name of the operation
      */
-    public static function getFormat();
+    public function getFormat();
 
     /**
-     * @param string $prototypeName
-     * @param string $prototypeName
-     * @param array $prototypeName
+     * @param array $fusionAst
+     * @param string $filename
      */
-    public static function export($targetDirectory, $namespacePrefix, $prototypes);
+    public function export(array $fusionAst, string $filename);
 }
