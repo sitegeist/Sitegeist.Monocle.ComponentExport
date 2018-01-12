@@ -12,22 +12,59 @@ abstract class AbstractComponentExportService implements ComponentExportServiceI
 {
 
     /**
+     * Identify the prototypeNames that shall be exported
+     *
      * @param array $fusionAst
+     * @param string $namespacePrefix
+     * @param string $exportDetectionPath
+     * @return array
+     */
+    public function detectExportPrototypes(array $fusionAst, string $namespacePrefix = null, string $exportEnablePath = null)
+    {
+        $exportPrototypeNames = [];
+        if ($fusionAst && $fusionAst['__prototypes']) {
+            foreach ($fusionAst['__prototypes'] as $prototypeFullName => $prototypeObject) {
+                $include = true;
+                if ($namespacePrefix) {
+                    if (strpos($prototypeFullName, $namespacePrefix) !== 0) {
+                        $include = false;
+                    }
+                }
+                if ($exportEnablePath) {
+                    $exportIsEnabled = Arrays::getValueByPath($prototypeObject, $exportEnablePath);
+                    if (!$exportIsEnabled) {
+                        $include = false;
+                    }
+                }
+
+                if ($include) {
+                    $exportPrototypeNames[] = $prototypeFullName;
+                }
+            }
+        }
+        return $exportPrototypeNames;
+    }
+
+    /**
+     * Export the fusion ast as json to the given file
+     *
+     * @param array $fusionAst
+     * @param array $exportPrototypes
      * @param string $filename
      */
-    public function export(array $fusionAst, string $filename)
+    public function exportAst(array $fusionAst, array $exportPrototypes, string $filename)
     {
-        $exportPrototypeNames = $this->getExportPrototypeNamesFromAst($fusionAst);
+        $fusionAst = $this->removeStyleguideMetaProperties($fusionAst);
 
-        $requiredPrototypeNames = $this->getRequiredPrototypeNames($fusionAst, $exportPrototypeNames);
+        $requiredPrototypeNames = $this->getRequiredPrototypeNames($fusionAst, $exportPrototypes);
 
         $basePrototypeNames = $this->getBasePrototypeNames($fusionAst, $requiredPrototypeNames);
 
-        $prototypes = array_unique(array_merge($exportPrototypeNames, $requiredPrototypeNames, $basePrototypeNames));
+        $prototypes = array_unique(array_merge($exportPrototypes, $requiredPrototypeNames, $basePrototypeNames));
 
         $prototypeAst = $this->reduceFusionAstToRequiredPrototypeNames($fusionAst, $prototypes);
 
-        $prototypeAst = $this->postProcessAst($prototypeAst, $exportPrototypeNames);
+        $prototypeAst = $this->postProcessAst($prototypeAst, $exportPrototypes);
 
         file_put_contents($filename, json_encode($prototypeAst, JSON_PRETTY_PRINT));
     }
@@ -39,34 +76,25 @@ abstract class AbstractComponentExportService implements ComponentExportServiceI
      * @param array $exportPrototypeNames
      * @return array
      */
-    abstract protected function postProcessAst(array $fusionAst, array $exportPrototypeNames);
+    protected function postProcessAst(array $fusionAst, array $exportPrototypeNames) {
+        return $fusionAst;
+    }
 
     /**
-     * Get the fusion-path that is used to identify the prototypes that shall be exported
-     *
-     * @return string
-     */
-    abstract protected function getExportPrototypeDetectionPath();
-
-    /**
-     * Identify the prototypeNames that shall be exported
+     * Remove the styleguide props and propSets, since those contain are not needed ob the target platform
+     * and use fusion components that can only work inside neos
      *
      * @param array $fusionAst
      * @return array
      */
-    protected function getExportPrototypeNamesFromAst($fusionAst)
-    {
-        $exportPrototypeDetectionPath = $this->getExportPrototypeDetectionPath();
-        $exportPrototypeNames = [];
-        if ($fusionAst && $fusionAst['__prototypes']) {
-            foreach ($fusionAst['__prototypes'] as $prototypeFullName => $prototypeObject) {
-                $enableExportConfiguration = Arrays::getValueByPath($prototypeObject, $exportPrototypeDetectionPath);
-                if ($enableExportConfiguration) {
-                    $exportPrototypeNames[] = $prototypeFullName;
-                }
+    protected function removeStyleguideMetaProperties(array $fusionAst) {
+        foreach ($fusionAst['__prototypes'] as $prototypeName => $prototypeAst) {
+            $propConfig = Arrays::getValueByPath($fusionAst, ["__prototypes", $prototypeName, '__meta', 'styleguide', 'props']);
+            if($propConfig) {
+                $fusionAst = Arrays::unsetValueByPath($fusionAst, ["__prototypes", $prototypeName, '__meta', 'styleguide', 'props']);
             }
         }
-        return $exportPrototypeNames;
+        return $fusionAst;
     }
 
     /**
@@ -121,7 +149,7 @@ abstract class AbstractComponentExportService implements ComponentExportServiceI
 
     /**
      * @param array $fusionAst
-     * @param arraay $requiredPrototypeNames
+     * @param array $requiredPrototypeNames
      * @return array
      */
     protected function reduceFusionAstToRequiredPrototypeNames($fusionAst, $requiredPrototypeNames)
@@ -135,13 +163,5 @@ abstract class AbstractComponentExportService implements ComponentExportServiceI
         return $result;
     }
 
-    /**
-     * @param $fusionAstExcerpt
-     * @return array
-     */
-    protected function extractPrototypeNamesFromAstExcerpt($fusionAstExcerpt)
-    {
-
-    }
 
 }
