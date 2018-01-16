@@ -1,10 +1,9 @@
 {
-    "description": "",
-    "type": "neos-plugin",
     "name": "sitegeist/monocle-componentexport",
+    "description": "Export fusion-prototypes as json-ast for beeing used in standalone fusion-implementations",
+    "type": "neos-plugin",
     "require": {
         "neos/fusion": "*",
-        "packagefactory/atomicfusion-proptypes": "*",
         "sitegeist/monocle": "^4.0|dev-master"
     },
     "autoload": {

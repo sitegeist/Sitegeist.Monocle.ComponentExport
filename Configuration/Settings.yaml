@@ -1,0 +1,26 @@
+Sitegeist:
+  Monocle:
+    ComponentExport:
+      presets:
+
+        default:
+          description: "Export the unmodified fusion ast"
+          filters: []
+
+
+        styleguideItems:
+          description: "Export all styleguide items and create render pathes"
+          filters:
+
+            filterPrototypes:
+              class: \Sitegeist\Monocle\ComponentExport\Service\AstFilter\FilterPrototypesFilter
+              arguments:
+                localFusionPath: '__meta.styleguide'
+
+            removeStyleguidePropsFilter:
+              class: \Sitegeist\Monocle\ComponentExport\Service\AstFilter\RemoveStyleguidePropsFilter
+
+            createRenderer:
+              class: \Sitegeist\Monocle\ComponentExport\Service\AstFilter\CreateRenderPathesFilter
+              arguments:
+                localFusionPath: '__meta.styleguide'
