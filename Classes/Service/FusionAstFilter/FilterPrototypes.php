@@ -1,32 +1,32 @@
 <?php
-namespace Sitegeist\Monocle\ComponentExport\Service\AstFilter;
+namespace Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter;
 
 use Neos\Error\Messages\Notice;
 use Neos\Error\Messages\Result;
-Use Neos\Utility\Arrays;
+use Neos\Utility\Arrays;
 
-class FilterPrototypesFilter extends PrototypeListBasedFilter implements AstFilterInterface
+class FilterPrototypes extends PrototypeListBasedFilter implements FusionAstFilterInterface
 {
     /**
      * @param array $ast
-     * @param array $arguments
      * @param Result $result
+     * @param array $prototypeNames
      * @return array
      */
-    public function process(array $ast, array $arguments = [], Result &$result) : array
+    protected function processInternal(array $ast, Result &$result, array $prototypeNames = []) : array
     {
-        $prototypeNames = $this->getPrototypeNames($ast, $arguments);
-        if (!$prototypeNames) {
-            return $ast;
-        }
-
         $requiredPrototypeNames = $this->getRequiredPrototypeNames($ast, $prototypeNames);
         $basePrototypeNames = $this->getBasePrototypeNames($ast, $requiredPrototypeNames);
         $prototypesToExport = array_unique(array_merge($prototypeNames, $requiredPrototypeNames, $basePrototypeNames));
 
-        $filteredAst = [];
+        $filteredAst = [
+            '__prototypes' => []
+        ];
         foreach ($prototypesToExport as $prototypeToExport) {
-            $filteredAst["__prototypes"][$prototypeToExport] = Arrays::getValueByPath($ast, ["__prototypes" , $prototypeToExport]);
+            $filteredAst['__prototypes'][$prototypeToExport] = Arrays::getValueByPath(
+                $ast,
+                ['__prototypes' , $prototypeToExport]
+            );
         }
 
         return $filteredAst;
@@ -70,14 +70,16 @@ class FilterPrototypesFilter extends PrototypeListBasedFilter implements AstFilt
         $basePrototypeNames = [];
 
         // check inheritance chain and add all prototypes found
-        foreach($requiredPrototypeNames as $requiredPrototypeName) {
-            $prototypeChain = Arrays::getValueByPath($fusionAst, ["__prototypes" , $requiredPrototypeName, '__prototypeChain']);
-            if(is_array($prototypeChain)) {
+        foreach ($requiredPrototypeNames as $requiredPrototypeName) {
+            $prototypeChain = Arrays::getValueByPath(
+                $fusionAst,
+                ["__prototypes" , $requiredPrototypeName, '__prototypeChain']
+            );
+            if (is_array($prototypeChain)) {
                 $basePrototypeNames = array_merge($basePrototypeNames, $prototypeChain);
             }
         }
 
         return array_unique($basePrototypeNames);
     }
-
 }

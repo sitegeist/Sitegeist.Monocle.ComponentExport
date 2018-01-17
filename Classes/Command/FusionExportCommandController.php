@@ -20,7 +20,7 @@ use Neos\Flow\Cli\CommandController;
 use Neos\Utility\Arrays;
 use Neos\Utility\PositionalArraySorter;
 
-use Sitegeist\Monocle\ComponentExport\Service\AstFilter\AstFilterInterface;
+use Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter\FusionAstFilterInterface;
 use Sitegeist\Monocle\Fusion\FusionService;
 use Sitegeist\Monocle\Service\DummyControllerContextTrait;
 use Sitegeist\Monocle\Service\PackageKeyTrait;
@@ -56,8 +56,8 @@ class FusionExportCommandController extends CommandController
             $this->outputLine('<b>The following presets are configured</b>');
             $this->outputLine();
             foreach ($this->presets as $name => $presetConfiguration) {
-                $description = array_key_exists('description', $presetConfiguration) ? $presetConfiguration['description'] : '';
-                $this->outputLine(sprintf(' - %s: %s', $name, $description));
+                $description = Arrays::getValueByPath($presetConfiguration, 'description');
+                $this->outputLine(sprintf(' - %s: %s', $name, ($description ?: 'no description')));
             }
             $this->outputLine();
         } else {
@@ -67,21 +67,20 @@ class FusionExportCommandController extends CommandController
     }
 
     /**
-     * Get all styleguide items that are currently available
+     * Export the Fusion-AST as JSON, during export the filters defined in the given preset are applied
      *
-     * @param string $filename The file to export the ast to
-     * @param string $preset The preset for this export
-     * @param string $packageKey site-package (defaults to first found)
-     *
+     * @param string $packageKey site-package (defaults to the first found site-package)
+     * @param string $preset The preset-name for this export (defaults to 'default')
+     * @param string $filename The file to export the ast to, if no file is given the result is returned directly.
      */
-    public function presetCommand($filename = null, $preset = 'default', $packageKey = null)
+    public function presetCommand($packageKey = null, $preset = 'default', $filename = null)
     {
-          if (!array_key_exists($preset, $this->presets)) {
+        $presetConfiguration = Arrays::getValueByPath($this->presets, [$preset]);
+
+        if (!$presetConfiguration) {
             $this->outputLine(sprintf('Presets "%s" was not found in configuration', $preset));
             $this->quit(1);
         }
-
-        $presetConfiguration = $this->presets[$preset];
 
         $sitePackageKey = $packageKey ?: $this->getDefaultSitePackageKey();
         $fusionAst = $this->fusionService->getMergedFusionObjectTreeForSitePackage($sitePackageKey);
@@ -90,26 +89,26 @@ class FusionExportCommandController extends CommandController
         //
         // sort and apply filters
         //
-        $arraySorter = new PositionalArraySorter($presetConfiguration['filters']);
-        $presetFilterConfigurations = $arraySorter->toArray();
-
+        $presetFilterConfigurations = Arrays::getValueByPath($presetConfiguration, 'filters');
         if ($presetFilterConfigurations && is_array($presetFilterConfigurations)) {
-            foreach ($presetFilterConfigurations as $presetFilterConfiguration) {
+            $arraySorter = new PositionalArraySorter($presetFilterConfigurations);
+            $sortedPresetFilterConfigurations = $arraySorter->toArray();
+            foreach ($sortedPresetFilterConfigurations as $presetFilterConfiguration) {
                 $class = Arrays::getValueByPath($presetFilterConfiguration, 'class');
                 $arguments = Arrays::getValueByPath($presetFilterConfiguration, 'arguments');
                 $arguments = $arguments ?: [];
                 $filter = new $class();
-                if ($filter instanceof AstFilterInterface) {
-                    $fusionAst = $filter->process($fusionAst, $arguments, $result);
+                if ($filter instanceof FusionAstFilterInterface) {
+                    $fusionAst = $filter->process($fusionAst, $result, $arguments);
                 }
             }
         }
 
         //
-        // safe to file or return ast
+        // safe to file or return ast as json
         //
         if ($filename == null) {
-            $this->output( json_encode($fusionAst, JSON_PRETTY_PRINT) );
+            $this->output(json_encode($fusionAst, JSON_PRETTY_PRINT));
             $this->quit();
         } else {
             file_put_contents(
@@ -119,7 +118,13 @@ class FusionExportCommandController extends CommandController
         }
 
         $this->outputLine();
-        $this->outputLine(sprintf('<b>Exported the fusion ast with preset "%s" Components to file "%s"</b>', $preset, $filename));
+        $this->outputLine(
+            sprintf(
+                '<b>Exported the fusion ast with preset "%s" Components to file "%s"</b>',
+                $preset,
+                $filename
+            )
+        );
         $this->outputLine();
 
         if ($result->hasNotices()) {
@@ -131,15 +136,5 @@ class FusionExportCommandController extends CommandController
                 }
             }
         }
-    }
-
-    /**
-     * @param string $filename
-     * @param string $packageKey
-     * @param string $namespace
-     */
-    public function prototypesCommand($filename, $packageKey = null, $namespace)
-    {
-
     }
 }

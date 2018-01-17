@@ -1,3 +1,66 @@
+# Sitegeist.Monocle.ComponentExport
+
+<img src="./Resources/Public/Images/monocle_imagemark.svg" width="300" />
+
+## Export FusionAst as JSON for standalone fusion-runtimes
+
+This package exports the fusion ast and applies filters.
+
+The command `./flow fusionexport:preset --preset styleguideItems` will export an fusion-ast with all
+style-guide items and renderPathes for each item that will take all the props for the item from
+the context.
+
+### Authors & Sponsors
+
+* Martin Ficzel - ficzel@sitegeist.de
+* Wilhelm Behncke - behncke@sitegeist.de
+
+*The development and the public-releases of this package is generously sponsored
+by our employer http://www.sitegeist.de.*
+
+## Usage
+
+The package defines two cli commands.
+
+### `./flow fusionexport:list` 
+
+```
+List all configured fusion export configurations
+
+COMMAND:
+  sitegeist.monocle.componentexport:fusionexport:list
+
+USAGE:
+  ./flow fusionexport:list
+```
+
+### `./flow fusionexport:preset` 
+
+```
+Export the Fusion-AST as JSON, during export the filters defined in the given preset are applied
+
+COMMAND:
+  sitegeist.monocle.componentexport:fusionexport:preset
+
+USAGE:
+  ./flow fusionexport:preset [<options>]
+
+OPTIONS:
+  --package-key        site-package (defaults to the first found site-package)
+  --preset             The preset-name for this export (defaults to 'default')
+  --filename           The file to export the ast to, if no file is given the
+                       result is returned directly.
+```
+
+### Preset `styleguideItems`
+
+The package comes with a predefined filter chain 
+
+## Configuration
+
+This package is configured via Settings
+
+```yaml
 Sitegeist:
   Monocle:
     ComponentExport:
@@ -47,7 +110,7 @@ Sitegeist:
                 # Limit prototypes via pattern applied to the fusion name
                 # name: 'Component.*'
 
-            removeStyleguidePropsFilter:
+            removeStyleguideProps:
               position: 'after filterPrototypes'
               class: \Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter\RemoveStyleguideProps
 
@@ -55,4 +118,12 @@ Sitegeist:
               position: 'end'
               class: \Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter\CreateRenderPathes
               arguments: *styleguidePprototypeListDefinition
+```
 
+## Installation
+
+THIS PACKAGE IS NOT YET PUBLISHED.
+
+## Contribution
+
+We will gladly accept contributions. Please send us pull requests.

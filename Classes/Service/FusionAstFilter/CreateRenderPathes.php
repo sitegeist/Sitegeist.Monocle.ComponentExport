@@ -1,31 +1,29 @@
 <?php
-namespace Sitegeist\Monocle\ComponentExport\Service\AstFilter;
+namespace Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter;
 
 use Neos\Error\Messages\Notice;
 use Neos\Error\Messages\Result;
-Use Neos\Utility\Arrays;
+use Neos\Utility\Arrays;
 
-class CreateRenderPathesFilter extends PrototypeListBasedFilter implements AstFilterInterface
+class CreateRenderPathes extends PrototypeListBasedFilter implements FusionAstFilterInterface
 {
     /**
      * @param array $ast
-     * @param array $arguments
      * @param Result $result
+     * @param array $prototypeNames
      * @return array
      */
-    public function process(array $ast, array $arguments = [], Result &$result) : array
+    protected function processInternal(array $ast, Result &$result, array $prototypeNames = []) : array
     {
-        $prototypeNames = $this->getPrototypeNames($ast, $arguments);
-        if (!$prototypeNames) {
-            return $ast;
-        }
-
         foreach ($prototypeNames as $prototypeName) {
-
             //
             // create rendering ast-segment
             //
             $prototypeAst = Arrays::getValueByPath($ast, ['__prototypes', $prototypeName]);
+            if (!$prototypeAst) {
+                continue;
+            }
+
             $renderingAst = [
                 "__objectType" => $prototypeName,
                 "__eelExpression" => null,
@@ -37,8 +35,7 @@ class CreateRenderPathesFilter extends PrototypeListBasedFilter implements AstFi
             //
             $prototypePropTypes =  Arrays::getValueByPath($prototypeAst, ['__meta', 'propTypes']);
             if ($prototypePropTypes && is_array($prototypePropTypes)) {
-                $renderingAst['__meta']['propTypes'] = $prototypePropTypes;
-                foreach (array_keys($prototypePropTypes)  as $propName) {
+                foreach (array_keys($prototypePropTypes) as $propName) {
                     $renderingAst[$propName] = [
                         "__objectType" => null,
                         "__eelExpression" => $propName,
@@ -47,14 +44,17 @@ class CreateRenderPathesFilter extends PrototypeListBasedFilter implements AstFi
                 }
             }
 
-
             //
             // store render ast in path
             //
-
-            $renderPath = 'renderPrototype_' . str_replace( [':','.'] , '_', $prototypeName);
+            $renderPath = 'render_' . str_replace([':','.'], '_', $prototypeName);
             $ast[$renderPath] = $renderingAst;
-            $result->forProperty($prototypeName)->addNotice(new Notice(sprintf('Exported prototype "%s" to path "%s"', $prototypeName, $renderPath)));
+
+            //
+            // store notice
+            //
+            $notice = new Notice(sprintf('Exported prototype "%s" to path "%s"', $prototypeName, $renderPath));
+            $result->forProperty($prototypeName)->addNotice($notice);
         }
 
         return $ast;
@@ -66,10 +66,10 @@ class CreateRenderPathesFilter extends PrototypeListBasedFilter implements AstFi
      * @param array $prototypeNames
      * @return array
      */
-    protected function createPrototypesRenderingPathes(array $fusionAst, array $prototypeNames) {
+    protected function createPrototypesRenderingPathes(array $fusionAst, array $prototypeNames)
+    {
 
         foreach ($prototypeNames as $prototypeName) {
-
             //
             // create rendering ast-segment
             //
@@ -85,7 +85,7 @@ class CreateRenderPathesFilter extends PrototypeListBasedFilter implements AstFi
             //
             $prototypePropTypes =  Arrays::getValueByPath($prototypeAst, ['__meta', 'propTypes']);
             if ($prototypePropTypes && is_array($prototypePropTypes)) {
-                foreach (array_keys($prototypePropTypes)  as $propName) {
+                foreach (array_keys($prototypePropTypes) as $propName) {
                     $renderingAst[$propName] = [
                         "__objectType" => null,
                         "__eelExpression" => $propName,
@@ -102,5 +102,4 @@ class CreateRenderPathesFilter extends PrototypeListBasedFilter implements AstFi
         }
         return $fusionAst;
     }
-
 }

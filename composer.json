@@ -1,7 +1,8 @@
 {
     "name": "sitegeist/monocle-componentexport",
-    "description": "Export fusion-prototypes as json-ast for beeing used in standalone fusion-implementations",
+    "description": "Export fusion-ast as json for beeing used in various standalone fusion-implementations",
     "type": "neos-plugin",
+    "license": "GPL-3.0+",
     "require": {
         "neos/fusion": "*",
         "sitegeist/monocle": "^4.0|dev-master"
