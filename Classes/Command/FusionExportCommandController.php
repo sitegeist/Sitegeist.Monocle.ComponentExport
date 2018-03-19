@@ -84,6 +84,7 @@ class FusionExportCommandController extends CommandController
 
         $sitePackageKey = $packageKey ?: $this->getDefaultSitePackageKey();
         $fusionAst = $this->fusionService->getMergedFusionObjectTreeForSitePackage($sitePackageKey);
+        $fusionAst = ['__prototypes' => $fusionAst['__prototypes']];
         $result = new Result();
 
         //

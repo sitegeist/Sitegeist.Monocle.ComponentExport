@@ -29,9 +29,6 @@ Sitegeist:
           # The order of the filters can be controlled via the optional `position` property
           #
           filters:
-            removeStyleguidePropsFilter:
-              position: 'after filterPrototypes'
-              class: \Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter\RemoveStyleguideProps
 
             filterPrototypes:
               position: 'start'
@@ -52,7 +49,10 @@ Sitegeist:
                 # name: 'Component.*'
 
             createRenderPathes:
-              position: 'end'
+              position: 'after filterPrototypes'
               class: \Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter\CreateRenderPathes
               arguments: *styleguidePprototypeListDefinition
 
+            removeStyleguidePropsFilter:
+              position: 'end'
+              class: \Sitegeist\Monocle\ComponentExport\Service\FusionAstFilter\RemoveStyleguideProps
