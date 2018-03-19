@@ -1,7 +1,5 @@
 # Sitegeist.Monocle.ComponentExport
 
-<img src="./Resources/Public/Images/monocle_imagemark.svg" width="300" />
-
 ## Export FusionAst as JSON for standalone fusion-runtimes
 
 This package exports the fusion ast and applies filters.
